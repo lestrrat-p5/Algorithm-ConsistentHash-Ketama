@@ -73,15 +73,15 @@ Returns a list of Algorithm::ConsistentHash::Ketama::Bucket objects
 Portions of this distribution are derived from libketama, which is:
 
     Copyright (C) 2007 by                                          
-       Christian Muehlhaeuser c<< <chris@last.fm> >>
-       Richard Jones c<< <rj@last.fm> >>
+       Christian Muehlhaeuser C<< <chris@last.fm> >>
+       Richard Jones C<< <rj@last.fm> >>
 
 Affected portions are licensed under GPL v2.
 
 The rest of the code which is written by Daisuke Maki are available under
 Artistic License v2, and is:
 
-    Copyright (C) 2010  Daisuke Maki c<< <daisuke@endeworks.jp> >>
+    Copyright (C) 2010  Daisuke Maki C<< <daisuke@endeworks.jp> >>
 
 Please see the file xs/Ketama.xs for more detail.
 
