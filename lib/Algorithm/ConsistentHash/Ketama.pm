@@ -21,11 +21,11 @@ __END__
 
 =head1 NAME
 
-Algorithm::ConsitentHash::Ketama - Ketama Consistent Hashing for Perl (XS)
+Algorithm::ConsistentHash::Ketama - Ketama Consistent Hashing for Perl (XS)
 
 =head1 SYNOPSIS
 
-    use Algorithm::ConsitentHash::Ketama;
+    use Algorithm::ConsistentHash::Ketama;
 
     my $ketama = Algorithm::ConsistentHash::Ketama->new();
 
