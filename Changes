@@ -1,0 +1,11 @@
+Changes
+=======
+
+0.00001_01 - May 02 2010
+    * Fix doc typos
+    * Apply some XS tweaks
+    * Add test_requires clause
+    * Add missing Changes file
+
+0.00001 - Apr 28 2010
+    * Initial release
