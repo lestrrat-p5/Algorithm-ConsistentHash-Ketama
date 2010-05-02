@@ -4,6 +4,10 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#ifndef floorf
+#include <math.h>
+#endif
+
 #define PKETAMA_STATE_FROM_SV(sv) \
     (mg_find(SvRV(sv), '~')->mg_obj)
 
