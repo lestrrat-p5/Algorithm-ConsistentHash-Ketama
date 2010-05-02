@@ -16,31 +16,37 @@ can_ok "Algorithm::ConsistentHash::Ketama", "new", "add_bucket", "DESTROY";
 
     my @buckets = $ketama->buckets();
 
-    is scalar @buckets, 4;
-    is $buckets[0]->label, "localhost:11211";
-    is $buckets[0]->weight, 900;
-    is $buckets[1]->label, "localhost:11212";
-    is $buckets[1]->weight, 1800;
-    is $buckets[2]->label, "localhost:11213";
-    is $buckets[2]->weight, 3600;
-    is $buckets[3]->label, "localhost:11214";
-    is $buckets[3]->weight, 7200;
+    (
+        is( scalar @buckets, 4 ) &&
+        is( $buckets[0]->label, "localhost:11211" ) &&
+        is( $buckets[0]->weight, 900 ) &&
+        is( $buckets[1]->label, "localhost:11212" ) &&
+        is( $buckets[1]->weight, 1800 ) &&
+        is( $buckets[2]->label, "localhost:11213" ) &&
+        is( $buckets[2]->weight, 3600 ) &&
+        is( $buckets[3]->label, "localhost:11214" ) &&
+        is( $buckets[3]->weight, 7200 )
+    ) or diag explain \@buckets;
 
     $ketama->remove_bucket("localhost:11211");
     @buckets = $ketama->buckets();
-    is scalar @buckets, 3;
-    is $buckets[0]->label, "localhost:11212";
-    is $buckets[0]->weight, 1800;
-    is $buckets[1]->label, "localhost:11213";
-    is $buckets[1]->weight, 3600;
-    is $buckets[2]->label, "localhost:11214";
-    is $buckets[2]->weight, 7200;
+    (
+        is(scalar @buckets, 3) &&
+        is( $buckets[0]->label, "localhost:11212" ) &&
+        is( $buckets[0]->weight, 1800 ) &&
+        is( $buckets[1]->label, "localhost:11213" ) &&
+        is( $buckets[1]->weight, 3600 ) &&
+        is( $buckets[2]->label, "localhost:11214" ) &&
+        is( $buckets[2]->weight, 7200 )
+    ) or diag explain \@buckets;
 
     $ketama->remove_bucket("localhost:11214");
     @buckets = $ketama->buckets();
-    is scalar @buckets, 2;
-    is $buckets[0]->label, "localhost:11212";
-    is $buckets[0]->weight, 1800;
-    is $buckets[1]->label, "localhost:11213";
-    is $buckets[1]->weight, 3600;
+    (
+        is( scalar @buckets, 2 ) &&
+        is( $buckets[0]->label, "localhost:11212" ) &&
+        is( $buckets[0]->weight, 1800 ) &&
+        is( $buckets[1]->label, "localhost:11213" ) &&
+        is( $buckets[1]->weight, 3600 ) 
+    ) or diag explain \@buckets;
 }
