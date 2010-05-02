@@ -113,6 +113,7 @@ PerlKetama_remove_bucket(PerlKetama *p, char *server)
             }
             p->numbuckets--;
             Renew(p->buckets, p->numbuckets, PerlKetama_Bucket);
+            i = p->numbuckets;
         }
     }
 
