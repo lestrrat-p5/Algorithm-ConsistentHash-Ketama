@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.00001_02 - May 03 2010
+    * In search of a mysterious failure from cpantesters
+    * Tweak tests
+    * Updated Test::More dep
+
 0.00001_01 - May 02 2010
     * Fix doc typos
     * Apply some XS tweaks
