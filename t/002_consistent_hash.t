@@ -11,30 +11,36 @@ $ketama->add_bucket( "localhost:1001", 100 );
 $ketama->add_bucket( "localhost:1002", 200 );
 $ketama->add_bucket( "localhost:1003", 400 );
 
-my %keys;
 
 { # 1. simple check
-    add_keys(\%keys, 500);
-    check_consistency($ketama, \%keys) for 1..10;
+    my $keys = add_keys(300);
+    my $hashed = distribute($ketama, $keys);
+    check_consistency($hashed);
+    is $hashed->{"localhost:1000"}, -1;
+    is $hashed->{"localhost:1004"}, -1;
 }
 
 { # 2. add more buckets
     $ketama->add_bucket( "localhost:1000",   5 );
     $ketama->add_bucket( "localhost:1004", 800 );
-    add_keys(\%keys, 500);
-    check_consistency($ketama, \%keys) for 1..10;
+    my $keys = add_keys(300);
+    my $hashed = distribute($ketama, $keys);
+    check_consistency($hashed);
 }
 
 { # 3. remove buckets
     $ketama->remove_bucket( "localhost:1000" );
-    check_consistency($ketama, \%keys) for 1..10;
+    my $keys = add_keys(300);
+    my $hashed = distribute($ketama, $keys);
+    check_consistency($hashed);
 }
 
 done_testing;
 
-sub check_consistency {
+sub distribute {
     my ($ketama, $keys) = @_;
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my %hashed;
     while ( my ($key, $expected) = each %$keys ) {
         my $got = $ketama->hash($key);
@@ -42,24 +48,40 @@ sub check_consistency {
         $hashed{$got}++;
     }
 
-    if (exists $hashed{"localhost:1000"}) {
-        ok( $hashed{"localhost:1001"} > $hashed{"localhost:1000"}, "1001 > 1000" );
+    foreach my $key qw( localhost:1000 localhost:1001 localhost:1002 localhost:1003 localhost:1004 ) {
+        if (! defined $hashed{$key}) {
+            $hashed{$key} = -1;
+        }
     }
-    ok( $hashed{"localhost:1002"} > $hashed{"localhost:1001"}, "1002 > 1001" );
-    ok( $hashed{"localhost:1003"} > $hashed{"localhost:1002"}, "1003 > 1002" );
-    if (exists $hashed{"localhost:1004"}) {
-        ok( $hashed{"localhost:1004"} > $hashed{"localhost:1003"}, "1004 > 1003" );
+
+    note( explain( \%hashed ) );
+    return \%hashed;
+}
+
+sub check_consistency {
+    my ($hashed) = @_;
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    if ($hashed->{"localhost:1000"} > 0) {
+        ok( $hashed->{"localhost:1001"} > $hashed->{"localhost:1000"}, "1001 > 1000" );
+    }
+    ok( $hashed->{"localhost:1002"} > $hashed->{"localhost:1001"}, "1002 > 1001" );
+    ok( $hashed->{"localhost:1003"} > $hashed->{"localhost:1002"}, "1003 > 1002" );
+    if ($hashed->{"localhost:1004"} > 0) {
+        ok( $hashed->{"localhost:1004"} > $hashed->{"localhost:1003"}, "1004 > 1003" );
     }
 }
 
 sub add_keys {
-    my ($keys, $howmany) = @_;
+    my ($howmany) = @_;
 
+    my %keys;
     while ($howmany-- > 0) {
         my $key = <DATA>;
         chomp $key;
-        $keys->{ $key } = undef;
+        $keys{ $key } = undef;
     }
+    return \%keys;
 }
 __DATA__
 6dc1cda6ba8caea25fb32b14851fc86d

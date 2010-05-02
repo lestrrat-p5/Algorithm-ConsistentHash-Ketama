@@ -8,7 +8,7 @@ if (! cc_available()) {
     exit 1;
 }
 
-test_requires 'Test::More';
+test_requires 'Test::More', 0.84;
 test_requires 'Test::Requires';
 use_ppport;
 cc_warnings;
