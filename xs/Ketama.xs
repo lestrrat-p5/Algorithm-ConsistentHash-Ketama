@@ -173,8 +173,11 @@ PerlKetama_create_continuum( PerlKetama *ketama )
     unsigned int i, k, h;
     char ss[MAX_SS_BUF];
     unsigned char digest[16];
-    unsigned int continuum_idx = 0;
-    PerlKetama_Continuum_Point continuum[ ketama->numbuckets * 160 ];
+    unsigned int continuum_idx;
+    PerlKetama_Continuum_Point *continuum;
+
+    continuum_idx = 0;
+    Newxz(continuum, ketama->numbuckets * 160, PerlKetama_Continuum_Point);
 
     for ( i = 0; i < ketama->numbuckets; i++ ) {
         PerlKetama_Bucket *b = ketama->buckets + i;
@@ -200,7 +203,8 @@ PerlKetama_create_continuum( PerlKetama *ketama )
         }
     }
 
-    qsort( (void *) &continuum, continuum_idx, sizeof(PerlKetama_Continuum_Point), (compfn) PerlKetama_continuum_compare );
+    Renew( continuum, continuum_idx, PerlKetama_Continuum_Point );
+    qsort( (void *) continuum, continuum_idx, sizeof(PerlKetama_Continuum_Point), (compfn) PerlKetama_continuum_compare );
 
     if (ketama->numpoints > 0) {
         Safefree(ketama->continuum);
@@ -212,6 +216,7 @@ PerlKetama_create_continuum( PerlKetama *ketama )
         ketama->continuum[i].bucket = continuum[i].bucket;
         ketama->continuum[i].point = continuum[i].point; 
     }
+    Safefree(continuum);
 }
 
 unsigned int
