@@ -109,7 +109,7 @@ PerlKetama_remove_bucket(PerlKetama *p, char *server)
     for( i = 0; i < p->numbuckets; i++ ) {
         if ( strEQ(p->buckets[i].label, server) ) {
             for( i += 1; i < p->numbuckets; i++) {
-                Copy(&(p->buckets[i]), &(p->buckets[i - 1]), 1, PerlKetama_Bucket);
+                StructCopy(&(p->buckets[i]), &(p->buckets[i - 1]), PerlKetama_Bucket);
             }
             p->numbuckets--;
             Renew(p->buckets, p->numbuckets, PerlKetama_Bucket);
