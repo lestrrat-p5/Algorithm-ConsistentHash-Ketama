@@ -14,4 +14,6 @@ use_ppport;
 cc_warnings;
 cc_src_paths 'xs';
 
+author_tests 'xt';
+
 WriteAll;
