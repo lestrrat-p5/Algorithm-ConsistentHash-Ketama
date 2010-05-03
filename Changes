@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.00002 - May 03 2010
+    * Upload previous changes as 0.00002
+    * Add author tests
+    * Hide some XS methods
+    * Add more for Bucket.pm
+
 0.00001_03 - May 03 2010
     * Allocate temporary variable continuum on heap instead of on stack
     * Attempt to include math.h explicitly
