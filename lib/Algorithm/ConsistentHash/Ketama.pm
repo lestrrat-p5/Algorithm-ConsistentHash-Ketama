@@ -11,7 +11,7 @@ BEGIN {
 
 sub new {
     my $class = shift;
-    my $self  = $class->create();
+    my $self  = $class->xs_create();
     return $self;
 }
 

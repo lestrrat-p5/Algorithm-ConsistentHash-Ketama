@@ -293,17 +293,19 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
 
     
 }
+#define PerlKetama_xs_create PerlKetama_create
+#define PerlKetama_xs_destroy PerlKetama_destroy
 
 MODULE = Algorithm::ConsistentHash::Ketama   PACKAGE = Algorithm::ConsistentHash::Ketama  PREFIX=PerlKetama_
 
 PROTOTYPES: DISABLE
 
 PerlKetama *
-PerlKetama_create(class_sv)
+PerlKetama_xs_create(class_sv)
         SV *class_sv;
 
 void
-PerlKetama_destroy(ketama)
+PerlKetama_xs_destroy(ketama)
         PerlKetama *ketama;
     ALIAS:
         DESTROY = 1
@@ -324,10 +326,6 @@ PerlKetama_buckets(ketama)
         PerlKetama *ketama;
     PPCODE:
         XSRETURN( PerlKetama_buckets(ketama) );
-
-void
-PerlKetama_create_continuum(ketama)
-        PerlKetama* ketama;
 
 char *
 PerlKetama_hash(ketama, thing)
