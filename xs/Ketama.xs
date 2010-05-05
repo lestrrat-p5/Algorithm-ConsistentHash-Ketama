@@ -94,8 +94,9 @@ PerlKetama_add_bucket(PerlKetama *p, char *server, int weight)
     Renew( p->buckets, p->numbuckets, PerlKetama_Bucket );
 
     len = strlen(server);
-    Newxz( p->buckets[p->numbuckets - 1].label, len, char );
-    Copy(server, p->buckets[p->numbuckets - 1].label, len, char);
+    Newxz( p->buckets[p->numbuckets - 1].label, len + 1, char );
+    Copy(server, p->buckets[p->numbuckets - 1].label, len + 1, char);
+
     p->buckets[p->numbuckets - 1].weight = weight;
 
     PerlKetama_clear_continuum( p );
@@ -290,9 +291,8 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
             return ketama->continuum[0].bucket->label;
         }
     }
-
-    
 }
+
 #define PerlKetama_xs_create PerlKetama_create
 #define PerlKetama_xs_destroy PerlKetama_destroy
 
