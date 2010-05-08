@@ -8,9 +8,6 @@
 #include <math.h>
 #endif
 
-#define PKETAMA_STATE_FROM_SV(sv) \
-    (mg_find(SvRV(sv), '~')->mg_obj)
-
 typedef struct {
     char *label;
     unsigned int weight;
@@ -25,7 +22,7 @@ typedef struct {
     unsigned int numbuckets;
     unsigned int totalweight;
     PerlKetama_Continuum_Point *continuum;
-    int numpoints;
+    unsigned int numpoints;
     PerlKetama_Bucket *buckets;
 } PerlKetama;
 

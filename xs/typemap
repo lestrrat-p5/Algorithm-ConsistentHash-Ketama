@@ -4,7 +4,14 @@ PerlKetama*    T_PERLKETAMA
 
 INPUT
 T_PERLKETAMA
-        $var = (PerlKetama *) PKETAMA_STATE_FROM_SV($arg);
+    {
+        MAGIC *mg;
+
+        mg = PerlKetama_mg_find(aTHX_ SvRV($arg), &PerlKetama_vtbl);
+        if (mg) {
+            $var = (PerlKetama *) mg->mg_ptr;
+        }
+    }
 
 OUTPUT
 T_PERLKETAMA
@@ -12,6 +19,7 @@ T_PERLKETAMA
             SvOK_off($arg); /* then return as undef instead of reaf to undef */
         else {
             /* setup $arg as a ref to a blessed hash hv */
+            MAGIC *mg;
             HV *hv = newHV();
             const char *classname = \"Algorithm::ConsistentHash::Ketama\";
             /* take (sub)class name to use from class_sv if appropriate */
@@ -22,7 +30,12 @@ T_PERLKETAMA
 
             /* now attach $var to the HV */
             /* done as two steps to avoid sv_magic SvREFCNT_inc and MGf_REFCOUNTED */
-            sv_magic((SV*)hv, NULL, '~', NULL, 0);
-            PKETAMA_STATE_FROM_SV($arg) = (void *) $var;
+            /* sv_magic((SV*)hv, NULL, '~', NULL, 0);*/
+            /* PKETAMA_STATE_FROM_SV($arg) = (void *) $var; */
+            mg = sv_magicext((SV*)hv, NULL, PERL_MAGIC_ext, &PerlKetama_vtbl, (char*) $var, 0); /* sizeof($var));  */
+            mg->mg_flags |= MGf_DUP;
+            {
+                mg = PerlKetama_mg_find(aTHX_ (SV *) hv, &PerlKetama_vtbl);
+            }
         }
 

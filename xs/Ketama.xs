@@ -57,8 +57,31 @@ PerlKetama_create(SV *class_sv)
     Newxz( ketama, 1, PerlKetama );
     ketama->numbuckets = 0;
     ketama->numpoints = 0;
+
+    ketama->buckets = NULL;
+    ketama->continuum = NULL;
+
     return ketama;
 }
+
+static MAGIC*
+PerlKetama_mg_find(pTHX_ SV* const sv, const MGVTBL* const vtbl){
+    MAGIC* mg;
+
+    assert(sv   != NULL);
+    assert(vtbl != NULL);
+
+    for(mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic){
+        if(mg->mg_virtual == vtbl){
+            assert(mg->mg_type == PERL_MAGIC_ext);
+            return mg;
+        }
+    }
+
+    croak("Ketama: Invalid Ketama object was passed");
+    return NULL; /* not reached */
+}
+
 
 static void
 PerlKetama_clear_continuum(PerlKetama *ketama)
@@ -69,9 +92,11 @@ PerlKetama_clear_continuum(PerlKetama *ketama)
     }
 }
 
-static void
-PerlKetama_destroy(PerlKetama *ketama)
+static int
+PerlKetama_mg_free(pTHX_ SV* const sv, MAGIC* const mg)
 {
+    PerlKetama* const ketama = (PerlKetama*) mg->mg_ptr;
+
     PerlKetama_clear_continuum(ketama);
 
     if (ketama->numbuckets > 0) {
@@ -82,6 +107,9 @@ PerlKetama_destroy(PerlKetama *ketama)
         Safefree(ketama->buckets);
     }
     Safefree(ketama);
+    PERL_UNUSED_ARG(sv);
+
+    return 0;
 }
 
 static void
@@ -91,7 +119,11 @@ PerlKetama_add_bucket(PerlKetama *p, char *server, int weight)
     p->numbuckets++;
     p->totalweight += weight;
 
-    Renew( p->buckets, p->numbuckets, PerlKetama_Bucket );
+    if (p->numbuckets == 1) {
+        Newxz( p->buckets, p->numbuckets, PerlKetama_Bucket );
+    } else {
+        Renew( p->buckets, p->numbuckets, PerlKetama_Bucket );
+    }
 
     len = strlen(server);
     Newxz( p->buckets[p->numbuckets - 1].label, len + 1, char );
@@ -245,8 +277,8 @@ char *
 PerlKetama_hash( PerlKetama *ketama, char *thing )
 {
     unsigned int h;
-    int highp;
-    int maxp  = 0,
+    unsigned int highp;
+    unsigned int maxp  = 0,
         lowp  = 0,
         midp  = 0
     ;
@@ -294,7 +326,60 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
 }
 
 #define PerlKetama_xs_create PerlKetama_create
-#define PerlKetama_xs_destroy PerlKetama_destroy
+
+static int
+PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
+#ifdef USE_ITHREADS /* single threaded perl has no "xxx_dup()" APIs */
+    PerlKetama* const ketama = (PerlKetama*)mg->mg_ptr;
+    PerlKetama_Bucket * const buckets = ketama->buckets;
+    PerlKetama_Continuum_Point * const continuum = ketama->continuum;
+    unsigned int i, j;
+
+    PerlKetama *newketama = PerlKetama_create(NULL);
+
+    if (ketama->numpoints <= 0) {
+        newketama->continuum = NULL;
+        newketama->numpoints = 0;
+    } else {
+        Newxz(newketama->continuum, ketama->numpoints, PerlKetama_Continuum_Point);
+        for (i = 0; i < ketama->numpoints; i++) {
+            StructCopy(&(continuum[i]), &(newketama->continuum[i]), PerlKetama_Continuum_Point);
+        }
+    }
+
+    if (ketama->numbuckets <= 0) {
+        newketama->buckets = NULL;
+        newketama->numbuckets = 0;
+    } else {
+        Newxz(newketama->buckets, ketama->numbuckets, PerlKetama_Bucket);
+        for (i = 0; i < ketama->numbuckets; i++ ) {
+            StructCopy(&(buckets[i]), &(newketama->buckets[i]), PerlKetama_Bucket);
+
+            for (j = 0; j < ketama->numpoints; j++) {
+                if ( strEQ( buckets[i].label, continuum[j].bucket->label ) ) {
+                    newketama->continuum[j].bucket = newketama->buckets + i;
+                }
+            }
+        }
+    }
+    mg->mg_ptr = (char *) newketama;
+#else
+    PERL_UNUSED_VAR(mg);
+    PERL_UNUSED_VAR(param);
+#endif
+    return 0;
+}
+
+static MGVTBL PerlKetama_vtbl = { /* for identity */
+    NULL, /* get */
+    NULL, /* set */
+    NULL, /* len */
+    NULL, /* clear */
+    PerlKetama_mg_free, /* free */
+    NULL, /* copy */
+    PerlKetama_mg_dup, /* dup */
+    NULL,  /* local */
+};
 
 MODULE = Algorithm::ConsistentHash::Ketama   PACKAGE = Algorithm::ConsistentHash::Ketama  PREFIX=PerlKetama_
 
@@ -303,12 +388,6 @@ PROTOTYPES: DISABLE
 PerlKetama *
 PerlKetama_xs_create(class_sv)
         SV *class_sv;
-
-void
-PerlKetama_xs_destroy(ketama)
-        PerlKetama *ketama;
-    ALIAS:
-        DESTROY = 1
 
 void
 PerlKetama_add_bucket(ketama, label, weight)

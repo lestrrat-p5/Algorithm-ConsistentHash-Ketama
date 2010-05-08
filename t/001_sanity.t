@@ -3,7 +3,7 @@ use Test::More tests => 24;
 
 use_ok "Algorithm::ConsistentHash::Ketama";
 
-can_ok "Algorithm::ConsistentHash::Ketama", "new", "add_bucket", "DESTROY";
+can_ok "Algorithm::ConsistentHash::Ketama", "new", "add_bucket", "remove_bucket", "hash";
 
 {
     my $ketama = Algorithm::ConsistentHash::Ketama->new();
