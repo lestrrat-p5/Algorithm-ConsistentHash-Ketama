@@ -2,6 +2,7 @@ use inc::Module::Install;
 
 name 'Algorithm-ConsistentHash-Ketama';
 all_from 'lib/Algorithm/ConsistentHash/Ketama.pm';
+auto_set_repository;
 
 if (! cc_available()) {
     warn "no compiler available";
