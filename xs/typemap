@@ -34,8 +34,5 @@ T_PERLKETAMA
             /* PKETAMA_STATE_FROM_SV($arg) = (void *) $var; */
             mg = sv_magicext((SV*)hv, NULL, PERL_MAGIC_ext, &PerlKetama_vtbl, (char*) $var, 0); /* sizeof($var));  */
             mg->mg_flags |= MGf_DUP;
-            {
-                mg = PerlKetama_mg_find(aTHX_ (SV *) hv, &PerlKetama_vtbl);
-            }
         }
 
