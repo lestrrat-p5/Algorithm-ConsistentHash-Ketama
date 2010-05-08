@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00005 - May 09 2010
+    * Remove superfulous code from constructor
+
 0.00004 - May 09 2010
     * Fix memory leak
 
