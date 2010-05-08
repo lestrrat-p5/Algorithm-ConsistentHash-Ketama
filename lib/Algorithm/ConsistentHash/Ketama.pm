@@ -5,7 +5,7 @@ use XSLoader;
 our $VERSION;
 
 BEGIN {
-    $VERSION = '0.00002';
+    $VERSION = '0.00003';
     XSLoader::load( __PACKAGE__, $VERSION );
 }
 

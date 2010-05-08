@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00003 - May 08  2010
+    * Add bunch of thread safety changes
+
 0.00002 - May 03 2010
     * Upload previous changes as 0.00002
     * Add author tests
