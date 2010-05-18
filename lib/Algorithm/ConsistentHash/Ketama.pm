@@ -51,6 +51,10 @@ hash a string.
 
 Creates a new instance of Algorithm::ConsistentHash::Ketama
 
+=head2 clone
+
+Clones the current object.
+
 =head2 add_bucket( $key, $weight )
 
 Adds a bucket to the list. C<$key> is the name of the bucket, and C<$weight>
