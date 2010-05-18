@@ -142,6 +142,7 @@ PerlKetama_remove_bucket(PerlKetama *p, char *server)
     for( i = 0; i < p->numbuckets; i++ ) {
         if ( strEQ(p->buckets[i].label, server) ) {
             Safefree(p->buckets[i].label);
+            p->totalweight -= p->buckets[i].weight;
             for( i += 1; i < p->numbuckets; i++) {
                 StructCopy(&(p->buckets[i]), &(p->buckets[i - 1]), PerlKetama_Bucket);
             }
@@ -299,6 +300,7 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
     maxp  = highp;
 
     h = PerlKetama_hash_string(thing);
+
     while ( 1 ) {
         midp = (int)( ( lowp+highp ) / 2 );
         if ( midp == maxp ) {
@@ -328,15 +330,15 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
 
 #define PerlKetama_xs_create PerlKetama_create
 
-static int
-PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
-#ifdef USE_ITHREADS /* single threaded perl has no "xxx_dup()" APIs */
-    PerlKetama* const ketama = (PerlKetama*)mg->mg_ptr;
+static PerlKetama *
+PerlKetama_clone(PerlKetama * const ketama)
+{
     PerlKetama_Bucket * const buckets = ketama->buckets;
     PerlKetama_Continuum_Point * const continuum = ketama->continuum;
     unsigned int i, j;
-
     PerlKetama *newketama = PerlKetama_create(NULL);
+
+    newketama->totalweight = ketama->totalweight;
 
     if (ketama->numpoints <= 0) {
         newketama->continuum = NULL;
@@ -346,6 +348,7 @@ PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
         for (i = 0; i < ketama->numpoints; i++) {
             StructCopy(&(continuum[i]), &(newketama->continuum[i]), PerlKetama_Continuum_Point);
         }
+        newketama->numpoints = ketama->numpoints;
     }
 
     if (ketama->numbuckets <= 0) {
@@ -355,15 +358,32 @@ PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
         Newxz(newketama->buckets, ketama->numbuckets, PerlKetama_Bucket);
         for (i = 0; i < ketama->numbuckets; i++ ) {
             StructCopy(&(buckets[i]), &(newketama->buckets[i]), PerlKetama_Bucket);
-
-            for (j = 0; j < ketama->numpoints; j++) {
-                if ( strEQ( buckets[i].label, continuum[j].bucket->label ) ) {
-                    newketama->continuum[j].bucket = newketama->buckets + i;
+            Newxz(newketama->buckets[i].label, strlen(buckets[i].label) + 1, char);
+            Copy(buckets[i].label, newketama->buckets[i].label, strlen(buckets[i].label) + 1, char);
+            if ( ketama->numpoints > 0) {
+                int found = 0;
+                for (j = 0; j < ketama->numpoints; j++) {
+                    if ( strEQ( buckets[i].label, continuum[j].bucket->label ) ) {
+                        newketama->continuum[j].bucket = newketama->buckets + i;
+                        found = 1;
+                        j = ketama->numpoints;
+                    }
+                }
+                if (! found) {
+                    croak("SANITY CHECK FAILED: Should not get here");
                 }
             }
         }
+        newketama->numbuckets = ketama->numbuckets;
     }
-    mg->mg_ptr = (char *) newketama;
+    return newketama;
+}
+
+static int
+PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
+#ifdef USE_ITHREADS /* single threaded perl has no "xxx_dup()" APIs */
+    PerlKetama* const ketama = (PerlKetama*)mg->mg_ptr;
+    mg->mg_ptr = (char *) PerlKetama_clone(ketama);
 #else
     PERL_UNUSED_VAR(mg);
     PERL_UNUSED_VAR(param);
@@ -405,10 +425,18 @@ void
 PerlKetama_buckets(ketama)
         PerlKetama *ketama;
     PPCODE:
+        /* since PerlKetama_buckets may push an unknown number of items
+           into the Perl stash, this is required */
         XSRETURN( PerlKetama_buckets(ketama) );
 
 char *
 PerlKetama_hash(ketama, thing)
         PerlKetama* ketama;
         char *thing;
+
+PerlKetama *
+PerlKetama_clone(ketama)
+        PerlKetama *ketama;
+    PREINIT:
+        SV *class_sv = ST(0);
 
