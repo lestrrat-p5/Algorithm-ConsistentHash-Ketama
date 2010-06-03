@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00007 - Jun 3 2010
+    * How about actually using ppport.h?
+
 0.00006 - May 18 2010
     * Fix cloning problems under threads 
 
