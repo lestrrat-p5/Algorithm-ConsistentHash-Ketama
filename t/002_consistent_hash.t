@@ -61,6 +61,11 @@ sub distribute {
         if (ok $got, "got hashed value for $key as $got") {
             $hashed{$got}++;
         }
+        # test logic for returning hash number
+        my ($str, $num) = $ketama->hash_with_hashnum($key);
+        is($str, $got, "->hash_with_hashnum returns same label as ->hash");
+        $str = $ketama->label_from_hashnum($num);
+        is($str, $got, "->label_from_hashnum returns same label as ->hash");
     }
 
     foreach my $key qw( localhost:1000 localhost:1001 localhost:1002 localhost:1003 localhost:1004 ) {

@@ -276,7 +276,7 @@ PerlKetama_hash_string( char* in )
 #define PERL_KETAMA_TRACE(x)
 #endif
 char *
-PerlKetama_hash( PerlKetama *ketama, char *thing )
+PerlKetama_hash_internal( PerlKetama *ketama, char *thing, unsigned int *thehash )
 {
     unsigned int h;
     unsigned int highp;
@@ -299,7 +299,14 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
     highp = ketama->numpoints;
     maxp  = highp;
 
-    h = PerlKetama_hash_string(thing);
+    /* Accept either string OR hash number as input */
+    if (thing != NULL) {
+        h = PerlKetama_hash_string(thing);
+        *thehash = h;
+    }
+    else {
+        h = *thehash;
+    }
 
     while ( 1 ) {
         midp = (int)( ( lowp+highp ) / 2 );
@@ -327,6 +334,14 @@ PerlKetama_hash( PerlKetama *ketama, char *thing )
         }
     }
 }
+
+char *
+PerlKetama_hash( PerlKetama *ketama, char *thing )
+{
+    unsigned int hash;
+    return PerlKetama_hash_internal(ketama, thing, &hash);
+}
+
 
 #define PerlKetama_xs_create PerlKetama_create
 
@@ -433,6 +448,31 @@ char *
 PerlKetama_hash(ketama, thing)
         PerlKetama* ketama;
         char *thing;
+
+void
+PerlKetama_hash_with_hashnum(ketama, thing)
+        PerlKetama* ketama;
+        char *thing;
+    PREINIT:
+        unsigned int hash;
+        char *label;
+    PPCODE:
+        label = PerlKetama_hash_internal(ketama, thing, &hash);
+        mXPUSHp(label, strlen(label));
+        mXPUSHu(hash);
+        XSRETURN(2);
+
+void
+PerlKetama_label_from_hashnum(ketama, thing)
+        PerlKetama* ketama;
+        unsigned int thing;
+    PREINIT:
+        char *label;
+    PPCODE:
+        dTARG;
+        label = PerlKetama_hash_internal(ketama, NULL, &thing);
+        XPUSHs(sv_2mortal(newSVpv(label, strlen(label))));
+        XSRETURN(1);
 
 PerlKetama *
 PerlKetama_clone(ketama)
