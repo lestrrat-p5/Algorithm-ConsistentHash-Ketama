@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.00008 - May 15 2012
+    * Add hash_with_hashnum(), label_from_hashnum(). This allows clients to
+      cache the hashed values -- thus avoiding the need to recompute the
+      MD5 hash. However, you should make sure you know what you're doing
+      before using these (Steffen Mueller)
+      (https://github.com/lestrrat/Algorithm-ConsistentHash-Ketama/pull/1)
+
 0.00007 - Jun 3 2010
     * How about actually using ppport.h?
 
