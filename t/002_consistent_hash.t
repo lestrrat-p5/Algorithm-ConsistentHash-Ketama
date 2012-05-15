@@ -68,7 +68,7 @@ sub distribute {
         is($str, $got, "->label_from_hashnum returns same label as ->hash");
     }
 
-    foreach my $key qw( localhost:1000 localhost:1001 localhost:1002 localhost:1003 localhost:1004 ) {
+    foreach my $key (qw( localhost:1000 localhost:1001 localhost:1002 localhost:1003 localhost:1004 )) {
         if (! defined $hashed{$key}) {
             $hashed{$key} = -1;
         }
