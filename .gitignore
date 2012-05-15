@@ -1,0 +1,11 @@
+*.o
+MYMETA.*
+META.*
+MANIFEST.bak
+Makefile
+*.bs
+.*.swp
+.*.swo
+blib/
+pm_to_blib
+xs/Ketama.c
