@@ -72,6 +72,20 @@ Removes the given bucket from the list
 
 Returns a list of Algorithm::ConsistentHash::Ketama::Bucket objects
 
+=head2 hash_with_hashnum( $string )
+
+This is an advanced function. Reach for it only if you know exactly
+why you need it.
+
+Returns both the label (as with the hash() function) AND the computed internal
+hash. This internal hash number can be used to look up the label again without
+recomputing the hash.
+
+=head2 label_from_hashnum( $hash )
+
+Given a number, returns the label associated with that hash number. Only
+hashes returned by hash_with_hashnum are permissible.
+
 =head1 LICENSE AND COPYRIGHT
 
 Portions of this distribution are derived from libketama, which is:
