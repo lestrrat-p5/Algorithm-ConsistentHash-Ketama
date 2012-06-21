@@ -2,5 +2,5 @@ language: perl
 perl:
   - "5.14"
   - "5.12"
-before_install: "cpanm Module::Install Module::Install::Repository Module::Install::XSUtil Module::Install::AuthorTests"
+before_install: "cpanm --quiet --notest Module::Install Module::Install::Repository Module::Install::XSUtil Module::Install::AuthorTests"
 
