@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.00009 - Oct 20 2012
+    - No code change
+    - Upgrade to Module::Install 1.06
+      (see http://weblog.bulknews.net/post/33907905561/do-not-ship-modules-with-module-install-1-04)
+
 0.00008 - May 15 2012
     * Add hash_with_hashnum(), label_from_hashnum(). This allows clients to
       cache the hashed values -- thus avoiding the need to recompute the
