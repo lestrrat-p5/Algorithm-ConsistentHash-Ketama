@@ -37,12 +37,12 @@
 #include "KetamaMD5.h"
 
 static void
-PerlKetama_md5_digest( char* in, unsigned char md5pword[16] )
+PerlKetama_md5_digest( char* in, STRLEN len, unsigned char md5pword[16] )
 {
     md5_state_t md5state;
 
     md5_init( &md5state );
-    md5_append( &md5state, (unsigned char *) in, strlen( in ) );
+    md5_append( &md5state, (unsigned char *) in, len);
     md5_finish( &md5state, md5pword );
 }
 
@@ -224,7 +224,7 @@ PerlKetama_create_continuum( PerlKetama *ketama )
             if (snprintf(ss, MAX_SS_BUF, "%s-%d", b->label, k) >= MAX_SS_BUF) {
                 croak("snprintf() overflow detected for key '%s-%d'. Please use shorter labels", b->label, k);
             }
-            PerlKetama_md5_digest(ss, digest);
+            PerlKetama_md5_digest(ss, strlen(ss), digest);
 
             for( h = 0; h < 4; h++ ) {
                 continuum[ continuum_idx ].point = ( digest[3 + h * 4] << 24 )
@@ -255,12 +255,12 @@ PerlKetama_create_continuum( PerlKetama *ketama )
 }
 
 unsigned int
-PerlKetama_hash_string( char* in )
+PerlKetama_hash_string( char* in, STRLEN len)
 {
     unsigned char digest[16];
     unsigned int ret;
 
-    PerlKetama_md5_digest( in, digest );
+    PerlKetama_md5_digest( in, len, digest );
     ret = ( digest[3] << 24 )
         | ( digest[2] << 16 )
         | ( digest[1] <<  8 )
@@ -276,7 +276,7 @@ PerlKetama_hash_string( char* in )
 #define PERL_KETAMA_TRACE(x)
 #endif
 char *
-PerlKetama_hash_internal( PerlKetama *ketama, char *thing, unsigned int *thehash )
+PerlKetama_hash_internal( PerlKetama *ketama, char *thing, STRLEN len, unsigned int *thehash )
 {
     unsigned int h;
     unsigned int highp;
@@ -301,7 +301,7 @@ PerlKetama_hash_internal( PerlKetama *ketama, char *thing, unsigned int *thehash
 
     /* Accept either string OR hash number as input */
     if (thing != NULL) {
-        h = PerlKetama_hash_string(thing);
+        h = PerlKetama_hash_string(thing, len);
         *thehash = h;
     }
     else {
@@ -336,10 +336,15 @@ PerlKetama_hash_internal( PerlKetama *ketama, char *thing, unsigned int *thehash
 }
 
 char *
-PerlKetama_hash( PerlKetama *ketama, char *thing )
+PerlKetama_hash( PerlKetama *ketama, SV *thing )
 {
     unsigned int hash;
-    return PerlKetama_hash_internal(ketama, thing, &hash);
+    STRLEN len;
+    char *ptr;
+
+    ptr = SvPV(thing, len);
+
+    return PerlKetama_hash_internal(ketama, ptr, len, &hash);
 }
 
 
@@ -447,17 +452,20 @@ PerlKetama_buckets(ketama)
 char *
 PerlKetama_hash(ketama, thing)
         PerlKetama* ketama;
-        char *thing;
+        SV *thing;
 
 void
 PerlKetama_hash_with_hashnum(ketama, thing)
         PerlKetama* ketama;
-        char *thing;
+        SV *thing;
     PREINIT:
         unsigned int hash;
+        char *ptr;
+        STRLEN len;
         char *label;
     PPCODE:
-        label = PerlKetama_hash_internal(ketama, thing, &hash);
+        ptr = SvPV(thing, len);
+        label = PerlKetama_hash_internal(ketama, ptr, len, &hash);
         mXPUSHp(label, strlen(label));
         mXPUSHu(hash);
         XSRETURN(2);
@@ -469,8 +477,7 @@ PerlKetama_label_from_hashnum(ketama, thing)
     PREINIT:
         char *label;
     PPCODE:
-        dTARG;
-        label = PerlKetama_hash_internal(ketama, NULL, &thing);
+        label = PerlKetama_hash_internal(ketama, NULL, 0, &thing);
         XPUSHs(sv_2mortal(newSVpv(label, strlen(label))));
         XSRETURN(1);
 
