@@ -10,6 +10,8 @@ T_PERLKETAMA
         mg = PerlKetama_mg_find(aTHX_ SvRV($arg), &PerlKetama_vtbl);
         if (mg) {
             $var = (PerlKetama *) mg->mg_ptr;
+        } else {
+            croak(\"not a ketama object\");
         }
     }
 
