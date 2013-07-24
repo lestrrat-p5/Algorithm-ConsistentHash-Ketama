@@ -396,12 +396,12 @@ PerlKetama_clone(PerlKetama * const ketama)
 
 static int
 PerlKetama_mg_dup(pTHX_ MAGIC* const mg, CLONE_PARAMS* const param){
+    PERL_UNUSED_VAR(param);
 #ifdef USE_ITHREADS /* single threaded perl has no "xxx_dup()" APIs */
     PerlKetama* const ketama = (PerlKetama*)mg->mg_ptr;
     mg->mg_ptr = (char *) PerlKetama_clone(ketama);
 #else
     PERL_UNUSED_VAR(mg);
-    PERL_UNUSED_VAR(param);
 #endif
     return 0;
 }
