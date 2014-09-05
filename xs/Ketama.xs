@@ -310,9 +310,11 @@ PerlKetama_hash_internal( PerlKetama *ketama, char *thing, STRLEN len, unsigned 
 
     while ( 1 ) {
         midp = (int)( ( lowp+highp ) / 2 );
-        if ( midp == maxp ) {
+        if ( midp >= maxp ) {
             if ( midp == ketama->numpoints ) {
                 midp = 1;
+            } else {
+                midp = maxp;
             }
 
             return ketama->continuum[midp - 1].bucket->label;
