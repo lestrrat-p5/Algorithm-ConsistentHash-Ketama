@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00010 - Mar 1 2013
+    - No code change. Just a re-release of 0.00009
+
 0.00009 - Oct 20 2012
     - No code change
     - Upgrade to Module::Install 1.06
