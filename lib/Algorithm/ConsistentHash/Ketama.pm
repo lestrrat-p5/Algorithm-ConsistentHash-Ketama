@@ -8,10 +8,26 @@ BEGIN {
     $VERSION = '0.00011';
     XSLoader::load( __PACKAGE__, $VERSION );
 }
+use constant +{
+    HASHFUNC1 => 1,
+    HASHFUNC2 => 2,
+};
+our $DEFAULT_HASHFUNC = HASHFUNC1; # Use old behavior by default (broken).
+our %VALID_HASHFUNCS = map { ($_ => 1) } (HASHFUNC1, HASHFUNC2);
 
 sub new {
-    my $class = shift;
-    my $self  = $class->xs_create();
+    my ($class, %args) = @_;
+
+    my $hf = $DEFAULT_HASHFUNC;
+    my $x_hf = $args{use_hashfunc};
+    if (defined $x_hf) {
+        if (exists $VALID_HASHFUNCS{$x_hf}) {
+            $hf = $x_hf
+        }
+        # for all other values of $x_hf, ignore it
+    }
+
+    my $self = $class->xs_create($x_hf);
     return $self;
 }
 
@@ -28,6 +44,12 @@ Algorithm::ConsistentHash::Ketama - Ketama Consistent Hashing for Perl (XS)
     use Algorithm::ConsistentHash::Ketama;
 
     my $ketama = Algorithm::ConsistentHash::Ketama->new();
+
+    # Or
+    # $ketama = Algorithm::ConsistentHash::Ketama->new(
+    #    use_hashfunc => Algorithm::ConsistentHash::Ketama::HASHFUNC2(),
+    # )
+    # See "IMPORTANT NOTES FOR USERS OF 0.00009 AND BELOW"
 
     $ketama->add_bucket( $key1, $weight1 );
     $ketama->add_bucket( $key2, $weight2 );
@@ -85,6 +107,30 @@ recomputing the hash.
 
 Given a number, returns the label associated with that hash number. Only
 hashes returned by hash_with_hashnum are permissible.
+
+=head1 IMPORTANT NOTES FOR USERS OF 0.00009 AND BELOW
+
+Prior to version 0.00010 of this module, there used be a integer underflow
+bug. which caused inconsistencies with other implementations of this algorithm.
+
+This has been reported here: https://github.com/dgryski/go-ketama/commit/5fb0f7e85cb457c4cfb78bb892d02434d9f0620b
+
+The underflow should be fixed, but because this changes the hashing behavior
+for some keys and you may have already filled your cache with important data
+already, the old behavior is preserved by default.
+
+If you would like to switch to the new behavior, you may do one of the
+following:
+
+    # Change the behavior for this particular instance of A::C::Ketama:
+    my $ketama = Algorithm::ConsistentHash::Ketama->new(
+        use_hashfunc => Algorithm::ConsistentHash::Ketama::HASHFUNC2(),
+    );
+
+    # Globally change the behavior
+    local $Algorithm::ConsistentHash::Ketama::DEFAULT_HASHFUNC =
+        Algorithm::ConsistentHash::Ketama::HASHFUNC2();
+    my $ketama = Algorithm::ConsistentHash::Ketama->new();
 
 =head1 LICENSE AND COPYRIGHT
 

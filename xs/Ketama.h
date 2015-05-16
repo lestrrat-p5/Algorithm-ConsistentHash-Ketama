@@ -19,12 +19,13 @@ typedef struct {
     unsigned int point;
 } PerlKetama_Continuum_Point;
 
-typedef struct {
+typedef struct __PerlKetama {
     unsigned int numbuckets;
     unsigned int totalweight;
     PerlKetama_Continuum_Point *continuum;
     unsigned int numpoints;
     PerlKetama_Bucket *buckets;
+    char *(*hashfunc)( struct __PerlKetama *, char *, STRLEN, unsigned int * );
 } PerlKetama;
 
 typedef int (*compfn)( const void*, const void* );

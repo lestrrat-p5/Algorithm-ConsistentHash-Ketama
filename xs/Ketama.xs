@@ -36,6 +36,13 @@
 #include "Ketama.h"
 #include "KetamaMD5.h"
 
+#define PERL_KETAMA_TRACE_LEVEL 0
+#if (PERL_KETAMA_TRACE_LEVEL > 0)
+#define PERL_KETAMA_TRACE(x) warn(x)
+#else
+#define PERL_KETAMA_TRACE(x)
+#endif
+
 static void
 PerlKetama_md5_digest( char* in, STRLEN len, unsigned char md5pword[16] )
 {
@@ -46,9 +53,14 @@ PerlKetama_md5_digest( char* in, STRLEN len, unsigned char md5pword[16] )
     md5_finish( &md5state, md5pword );
 }
 
+// forward declaration
+static char *
+PerlKetama_hash_internal1( PerlKetama *, char *, STRLEN, unsigned int *);
+static char *
+PerlKetama_hash_internal2( PerlKetama *, char *, STRLEN, unsigned int *);
 
 static PerlKetama *
-PerlKetama_create(SV *class_sv)
+PerlKetama_create(SV *class_sv, int hashfunc)
 {
     PerlKetama *ketama;
 
@@ -60,6 +72,16 @@ PerlKetama_create(SV *class_sv)
 
     ketama->buckets = NULL;
     ketama->continuum = NULL;
+
+    switch (hashfunc) {
+    case 2:
+        PERL_KETAMA_TRACE("Using hash_internal2");
+        ketama->hashfunc = PerlKetama_hash_internal2;
+        break;
+    default:
+        PERL_KETAMA_TRACE("Using hash_internal1");
+        ketama->hashfunc = PerlKetama_hash_internal1;
+    }
 
     return ketama;
 }
@@ -269,14 +291,75 @@ PerlKetama_hash_string( char* in, STRLEN len)
     return ret;
 }
 
-#define PERL_KETAMA_TRACE_LEVEL 0
-#if (PERL_KETAMA_TRACE_LEVEL > 0)
-#define PERL_KETAMA_TRACE(x) warn(x)
-#else
-#define PERL_KETAMA_TRACE(x)
-#endif
-char *
-PerlKetama_hash_internal( PerlKetama *ketama, char *thing, STRLEN len, unsigned int *thehash )
+static char *
+PerlKetama_hash_internal2( PerlKetama *ketama, char *thing, STRLEN len, unsigned int *thehash )
+{
+    unsigned int h;
+    unsigned int highp;
+    unsigned int maxp  = 0,
+        lowp  = 0,
+        midp  = 0
+    ;
+    unsigned int midval, midval1;
+
+    if (ketama->numpoints == 0 && ketama->numbuckets > 0) {
+        PERL_KETAMA_TRACE("Generating continuum");
+        PerlKetama_create_continuum(ketama);
+    }
+
+    if (ketama->numpoints == 0) {
+        PERL_KETAMA_TRACE("no continuum available");
+        return NULL;
+    }
+
+    highp = ketama->numpoints;
+    maxp  = highp;
+
+    /* Accept either string OR hash number as input */
+    if (thing != NULL) {
+        h = PerlKetama_hash_string(thing, len);
+        *thehash = h;
+    }
+    else {
+        h = *thehash;
+    }
+
+    while ( 1 ) {
+        midp = (int)( ( lowp+highp ) / 2 );
+        if ( midp <= 0 ) {
+            midp = maxp;
+        }
+        if ( midp >= maxp ) {
+            if ( midp == ketama->numpoints ) {
+                midp = 1;
+            } else {
+                midp = maxp;
+            }
+
+            return ketama->continuum[midp - 1].bucket->label;
+        }
+        midval = ketama->continuum[midp].point;
+        midval1 = midp == 0 ? 0 : ketama->continuum[midp - 1].point;
+
+        if ( h <= midval && h > midval1 ) {
+            return ketama->continuum[midp].bucket->label;
+        }
+
+        if ( midval < h )
+            lowp = midp + 1;
+        else
+            highp = midp - 1;
+
+        if ( lowp > highp ) {
+            return ketama->continuum[0].bucket->label;
+        }
+    }
+}
+
+// This code exist because you might need to keep backwards compatibility
+// with older, but possibly broken versions
+static char *
+PerlKetama_hash_internal1( PerlKetama *ketama, char *thing, STRLEN len, unsigned int *thehash )
 {
     unsigned int h;
     unsigned int highp;
@@ -346,7 +429,7 @@ PerlKetama_hash( PerlKetama *ketama, SV *thing )
 
     ptr = SvPV(thing, len);
 
-    return PerlKetama_hash_internal(ketama, ptr, len, &hash);
+    return ketama->hashfunc(ketama, ptr, len, &hash);
 }
 
 
@@ -358,8 +441,9 @@ PerlKetama_clone(PerlKetama * const ketama)
     PerlKetama_Bucket * const buckets = ketama->buckets;
     PerlKetama_Continuum_Point * const continuum = ketama->continuum;
     unsigned int i, j;
-    PerlKetama *newketama = PerlKetama_create(NULL);
+    PerlKetama *newketama = PerlKetama_create(NULL, 1);
 
+    newketama->hashfunc = ketama->hashfunc;
     newketama->totalweight = ketama->totalweight;
 
     if (ketama->numpoints <= 0) {
@@ -429,8 +513,9 @@ MODULE = Algorithm::ConsistentHash::Ketama   PACKAGE = Algorithm::ConsistentHash
 PROTOTYPES: DISABLE
 
 PerlKetama *
-PerlKetama_xs_create(class_sv)
+PerlKetama_xs_create(class_sv, hashfunc)
         SV *class_sv;
+        int hashfunc;
 
 void
 PerlKetama_add_bucket(ketama, label, weight)
@@ -467,7 +552,7 @@ PerlKetama_hash_with_hashnum(ketama, thing)
         char *label;
     PPCODE:
         ptr = SvPV(thing, len);
-        label = PerlKetama_hash_internal(ketama, ptr, len, &hash);
+        label = ketama->hashfunc(ketama, ptr, len, &hash);
         mXPUSHp(label, strlen(label));
         mXPUSHu(hash);
         XSRETURN(2);
@@ -479,7 +564,7 @@ PerlKetama_label_from_hashnum(ketama, thing)
     PREINIT:
         char *label;
     PPCODE:
-        label = PerlKetama_hash_internal(ketama, NULL, 0, &thing);
+        label = ketama->hashfunc(ketama, NULL, 0, &thing);
         XPUSHs(sv_2mortal(newSVpv(label, strlen(label))));
         XSRETURN(1);
 
