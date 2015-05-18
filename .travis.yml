@@ -1,6 +1,6 @@
 language: perl
 perl:
-  - "5.14"
-  - "5.12"
+  - "5.20"
+  - "5.18"
 before_install: "cpanm --quiet --notest Module::Install Module::Install::Repository Module::Install::XSUtil Module::Install::AuthorTests"
 
