@@ -49,7 +49,7 @@ Algorithm::ConsistentHash::Ketama - Ketama Consistent Hashing for Perl (XS)
     # $ketama = Algorithm::ConsistentHash::Ketama->new(
     #    use_hashfunc => Algorithm::ConsistentHash::Ketama::HASHFUNC2(),
     # )
-    # See "IMPORTANT NOTES FOR USERS OF 0.00009 AND BELOW"
+    # See "IMPORTANT NOTES FOR USERS OF 0.00011 AND BELOW"
 
     $ketama->add_bucket( $key1, $weight1 );
     $ketama->add_bucket( $key2, $weight2 );
@@ -108,7 +108,7 @@ recomputing the hash.
 Given a number, returns the label associated with that hash number. Only
 hashes returned by hash_with_hashnum are permissible.
 
-=head1 IMPORTANT NOTES FOR USERS OF 0.00009 AND BELOW
+=head1 IMPORTANT NOTES FOR USERS OF 0.00011 AND BELOW
 
 Prior to version 0.00010 of this module, there used be a integer underflow
 bug. which caused inconsistencies with other implementations of this algorithm.
