@@ -296,11 +296,8 @@ PerlKetama_hash_internal2( PerlKetama *ketama, char *thing, STRLEN len, unsigned
 {
     unsigned int h;
     unsigned int highp;
-    unsigned int maxp  = 0,
-        lowp  = 0,
-        midp  = 0
-    ;
-    unsigned int midval, midval1;
+    unsigned int lowp;
+    unsigned int midp;
 
     if (ketama->numpoints == 0 && ketama->numbuckets > 0) {
         PERL_KETAMA_TRACE("Generating continuum");
@@ -312,9 +309,6 @@ PerlKetama_hash_internal2( PerlKetama *ketama, char *thing, STRLEN len, unsigned
         return NULL;
     }
 
-    highp = ketama->numpoints;
-    maxp  = highp;
-
     /* Accept either string OR hash number as input */
     if (thing != NULL) {
         h = PerlKetama_hash_string(thing, len);
@@ -324,36 +318,23 @@ PerlKetama_hash_internal2( PerlKetama *ketama, char *thing, STRLEN len, unsigned
         h = *thehash;
     }
 
-    while ( 1 ) {
-        midp = (int)( ( lowp+highp ) / 2 );
-        if ( midp <= 0 ) {
-            midp = maxp;
-        }
-        if ( midp >= maxp ) {
-            if ( midp == ketama->numpoints ) {
-                midp = 1;
-            } else {
-                midp = maxp;
-            }
+    lowp = 0;
+    highp = ketama->numpoints;
 
-            return ketama->continuum[midp - 1].bucket->label;
-        }
-        midval = ketama->continuum[midp].point;
-        midval1 = midp == 0 ? 0 : ketama->continuum[midp - 1].point;
-
-        if ( h <= midval && h > midval1 ) {
-            return ketama->continuum[midp].bucket->label;
-        }
-
-        if ( midval < h )
+    while (lowp < highp) {
+        midp = lowp + (highp - lowp) / 2;
+        if (ketama->continuum[midp].point > h) {
+            highp = midp;
+        } else {
             lowp = midp + 1;
-        else
-            highp = midp - 1;
-
-        if ( lowp > highp ) {
-            return ketama->continuum[0].bucket->label;
         }
     }
+
+    if (lowp >= ketama->numpoints) {
+       lowp = 0;
+    }
+
+    return ketama->continuum[lowp].bucket->label;
 }
 
 // This code exist because you might need to keep backwards compatibility
