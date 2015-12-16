@@ -234,14 +234,15 @@ PerlKetama_create_continuum( PerlKetama *ketama )
     PerlKetama_Continuum_Point *continuum;
 
     continuum_idx = 0;
-    Newxz(continuum, ketama->numbuckets * 160, PerlKetama_Continuum_Point);
+    Newxz(continuum, ketama->numbuckets * (160 + 1), PerlKetama_Continuum_Point);//160+1 because used 'round'
 
     for ( i = 0; i < ketama->numbuckets; i++ ) {
+        unsigned int continuum_cur_idx=0;
         PerlKetama_Bucket *b = ketama->buckets + i;
         float pct = b->weight / (float) ketama->totalweight;
-        unsigned int k_limit = floorf(pct * 40.0 * ketama->numbuckets);
-
-        for ( k = 0; k < k_limit; k++ ) {
+        unsigned int k_limit = round(pct * 40.0 * 4 * ketama->numbuckets);	//floorf
+        //printf("k_limit=%d->%d\n",k_limit,(k_limit+3)/4);
+        for ( k = 0; k < (k_limit+3)/4; k++ ) {
             /* 40 hashes, 4 numbers per hash = 160 points per bucket */
             if (snprintf(ss, MAX_SS_BUF, "%s-%d", b->label, k) >= MAX_SS_BUF) {
                 croak("snprintf() overflow detected for key '%s-%d'. Please use shorter labels", b->label, k);
@@ -256,6 +257,16 @@ PerlKetama_create_continuum( PerlKetama *ketama )
                 ;
                 continuum[ continuum_idx ].bucket = b;
                 continuum_idx++;
+                continuum_cur_idx++;
+                if(continuum_cur_idx>=k_limit)
+                {
+                //  printf("continuum_idx>=k_limit =%d,%d\n",continuum_idx,k_limit);
+                    break;
+                }
+            }
+            if(continuum_cur_idx>=k_limit)
+            {
+                break;
             }
         }
     }
